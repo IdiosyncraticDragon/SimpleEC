@@ -1,0 +1,162 @@
+function [Xoptima,FitnessOptimum] = GA(dimensionSize,landscape,landscapeBoundary,populationSize,simulationLimit)
+%this version GA (genetic algorithm) is the first version with binary representation so we define that
+%mutation is bit flip , and recombination is 1-Point crossover,and the
+%resolution is 0.001
+%dimensionSize means that each individual have home many demension
+global fitnessPoul;
+global reproductionProbability;
+global mutationRate;
+global resolution;
+global wholePatchCount;
+global theMaxBinaryRepresentation;
+global strLength;
+global population;
+global populationRealVaules;
+global intervalVaule;
+
+
+%pre-definition
+fitnessPoul = zeros(populationSize,1);
+reproductionProbability = zeros(populationSize,1);
+mutationRate = 0.01;
+resolution = 0.001;
+wholePatchCount = (landscapeBoundary(2)-landscapeBoundary(1)) / resolution;
+%count to binary string length
+theMaxBinaryRepresentation = dec2bin(wholePatchCount);
+strLength = length(theMaxBinaryRepresentation);%the length of each dimension of an individual
+individualStrPrensentationLen = 2*strLength;
+%set the mutation rate as the uniform probability to the whole gene
+mutationRate = 1/(strLength*dimensionSize);
+
+population = [];
+populationRealVaules = [];
+intervalVaule = landscapeBoundary(2) - landscapeBoundary(1);
+
+%inital the poputlation
+for i = 1 : populationSize,
+    tempParent = [];
+    tempVaule = [];
+    for j = 1:dimensionSize,
+        tempNumValue = landscapeBoundary(1)+rand()*intervalVaule;
+        tempVaule = [tempVaule,tempNumValue];
+        binaryValueStr = transferToString(tempNumValue,landscapeBoundary(1),strLength,resolution);
+        tempParent = [tempParent,binaryValueStr];
+    end
+    %tempParent
+    population = [population;tempParent];
+    populationRealVaules = [populationRealVaules;tempVaule];
+end
+
+%
+%fprintf('Initial Data:\n')
+%disp(population)
+%disp(populationRealVaules);
+%
+%simulation begin
+for i = 1 : simulationLimit,
+    %get the reproduction probability
+    fitnessPoul = transferFitnessAsPositive(landscape(populationRealVaules));
+        %we should transfer the fitnessdata in case of minus value
+    denominator = max(fitnessPoul);
+    %sumOfFitness = sum(fitnessPoul);
+    reproductionProbability = fitnessPoul ./ denominator;
+   %reproduction
+     %here we should use reproduction probability to determine which part will be
+     %the parent
+     Offspring = [];
+     for j = 1 : populationSize,
+        subscript = selectParent(reproductionProbability);
+        crossOverPoint = round((individualStrPrensentationLen-1)*rand()+0.01);%0.01 is added in case of rand() = 0
+        parentOne = population(subscript(1,1),:);
+        parentTwo = population(subscript(1,2),:);
+        newSpring = strcat(parentOne(1:(crossOverPoint)),parentTwo((crossOverPoint+1):individualStrPrensentationLen));
+        Offspring = [Offspring;newSpring];
+     end
+   %mutation
+   for j = 1 : populationSize,
+    dice = rand();
+    individualBeChecked = Offspring(j,:);
+    if dice <= mutationRate,
+        flitLocation = 1 + floor(individualStrPrensentationLen*rand());%mutation is bit-flip,0.01 is added in case of rand() = 0
+        individualBeChecked(1,flitLocation) = dec2bin(~individualBeChecked(1,flitLocation));
+    end
+   end
+   %survive
+   population = Offspring;
+   populationRealVaules = populationStrToRealValue(population,populationSize,dimensionSize,strLength);
+end
+
+ fitnessPoul = landscape(populationRealVaules);
+ bestFitnessSubscript = find(fitnessPoul == max(fitnessPoul));
+
+fprintf('simulation counts:%d, bestFitness',simulationLimit);
+%fprintf('fitness:\n');
+%disp(-1*fitnessPoul);
+fprintf('results:\n');
+%disp(population);
+fprintf('\tfitness:\n');
+disp(max(fitnessPoul));
+%fprintf('\tbest individual:\n');
+%disp(populationRealVaules(bestFitnessSubscript,:));
+%fprintf('optimum:');
+FitnessOptimum = fitnessp
+Xoptima = 
+
+    function twoParentsIndex = selectParent(probability)
+        count = 0;
+        cache = [];
+        compareSequence = randperm(populationSize);
+        
+        while count ~= 2,
+        selectProb = rand();    
+        for i = 1:populationSize,
+            parentIndex = compareSequence(i);
+            if selectProb < probability(parentIndex,1),
+                if any( cache == parentIndex)==1,%guarantee the two parents are different
+                    continue;
+                end
+                cache = [cache,parentIndex];
+                count = count+1;
+                break;
+            end
+        end
+        end
+        twoParentsIndex = cache;
+    end
+
+    function realvaluePresentation = populationStrToRealValue(stringPopulation,populationSize,dimensionSize,strLen)
+        realvaluePresentation = [];
+        for i = 1:populationSize,
+            stringPensentation = stringPopulation(i,:);
+            individual = [];
+            for j = 1:dimensionSize,
+            individual = [individual,transferToNumber(stringPensentation(((j-1)*strLen + 1):j*strLen),landscapeBoundary(1,1),resolution)];
+            end
+            realvaluePresentation = [realvaluePresentation;individual];
+        end
+    end
+end
+
+function transferedValue = transferFitnessAsPositive(fitnessVector)
+%the fitness Vector should be nx1
+bottom = min(fitnessVector);
+transferedValue = fitnessVector - bottom;
+bottom = abs(bottom);
+transferedValue = transferedValue + bottom;
+end
+
+function geneString = transferToString(number,lowBoundary,stringLength,resolution)
+intervalValue = (number - lowBoundary)/resolution;
+geneString = dec2bin(intervalValue);
+%add extral zeors to the top if the string is not enogh long
+divergence = stringLength - length(geneString);
+while divergence > 0,
+    geneString = strcat('0',geneString);
+    divergence = divergence - 1;
+end
+end
+
+function number = transferToNumber(theString,lowBoundary,resolution)
+number = bin2dec(theString);
+number = number*resolution + lowBoundary;
+end

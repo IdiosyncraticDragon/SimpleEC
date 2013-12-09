@@ -1,0 +1,144 @@
+function IsSucceeded = RunExperiment1(dimensionSize,populationSize,simulationTimes)
+%this function while invoke GA/PSO/DE/EDA to be tested on 14 benchmark functions
+definitionDomain = [[-100,100];[-100,100];[-100,100];[-100,100];[-100,100];[-100,100];
+                    [0,600];[-32,32];[-5,5];[-5,5];[-0.5,0.5];[-pi,pi];[-5,-5];[-100,100]];
+globalOptimum = [-450;-450;-450;-450;-310;390;-180;-140;-330;-330;90;-460;-130;-300]; 
+
+%dimensionSize = 3;
+%populationSize = 100;
+%simulationTimes = 1;
+lambdaForEDA = populationSize;
+divition = 2;
+miuForEDA = lambdaForEDA/divition;
+
+for i = 1:14,
+   fprintf('=======================F%d==============================\n',i);
+   GABestIndividual=[];
+   GABestFitness = 0;
+   PSOBestIndividual=[];
+   PSOBestFitness = 0;
+   DEBestIndividual=[];
+   DEBestFitness = 0;
+   EDABestIndividual=[];
+   EDABestFitness = 0;
+   GAAve = 0;
+   PSOAve = 0;
+   DEAve =0;
+   DEAAve = 0;
+   GATime = 0;
+   PSOTime = 0;
+   DETime = 0;
+   EDATime = 0;
+   recursiveTimes = 3;
+   %benchmark function encapsulation, use anonymouse function
+   benchmarkForMinimization = @(theX) applyAlgToBenchmark(theX,i);
+   benchmarkForMaximization = @(theX) -1*applyAlgToBenchmark(theX,i);
+   %run the algorithm
+   %GA
+   j=1;
+   tic;
+   [GABestIndividual,GABestFitness]= GA(dimensionSize,benchmarkForMaximization,definitionDomain(i,:),populationSize,simulationTimes);%j=1 so this is the firt term
+   GAAve = GAAve + GABestFitness;
+   while j < recursiveTimes,
+   		j = j+1;
+   		[tempind,tempfit] = GA(dimensionSize,benchmarkForMaximization,definitionDomain(i,:),populationSize,simulationTimes);
+   		GAAve = GAAve + tempfit;
+        %guarantee the GAResults is the best among all the results
+   		if tempfit > GABestFitness,
+   			GABestFitness = tempfit;
+   			GABestIndividual = tempind;
+   		end
+   end
+   GATime = toc / recursiveTimes;
+   GAAve = GAAve / recursiveTimes;
+   %the default GA search for max,but benchmark search for min, so we
+   %change the return value of bechmark to fit the GA, now we retrieve the
+   %original result from benchmark
+   GABestFitness = -GABestFitness;
+   %PSO
+   j=1;
+   tic;
+   [PSOBestIndividual,PSOBestFitness] = PSO(dimensionSize,benchmarkForMaximization,definitionDomain(i,:),populationSize,simulationTimes);
+   PSOAve = PSOAve + PSOBestFitness;
+   while j < recursiveTimes,
+   		j = j+1;
+ 	    [tempind,tempfit] = PSO(dimensionSize,benchmarkForMaximization,definitionDomain(i,:),populationSize,simulationTimes);
+ 	    PSOAve = PSOAve + tempfit;
+        if tempfit > PSOBestFitness,
+ 	    	PSOBestFitness = tempfit;
+ 	    	PSOBestIndividual = tempind;
+ 	    end
+   end
+   PSOTime = toc / recursiveTimes;
+   PSOAve = PSOAve / recursiveTimes;
+   PSOBestFitness = -PSOBestFitness;
+   %DE
+   j=1;
+   tic;
+   [DEBestIndividual,DEBestFitness]= DE(dimensionSize,benchmarkForMinimization,definitionDomain(i,:),populationSize,simulationTimes);
+   DEAAve = DEAAve + DEBestFitness;
+   while j < recursiveTimes,
+   		j = j+1;
+   		[tempind,tempfit] = DE(dimensionSize,benchmarkForMinimization,definitionDomain(i,:),populationSize,simulationTimes);
+   		DEAve = DEAve + tempfit;
+        if tempfit < DEBestFitness,
+   			DEBestFitness = tempfit;
+   			DEBestIndividual = tempind;
+   		end
+   end
+   DETime = toc / recursiveTimes;
+   DEAve = DEAve / recursiveTimes;
+   %EDA
+   j=1;
+   tic;
+   [EDABestIndividual,EDABestFitness] = EDA(dimensionSize,benchmarkForMaximization,definitionDomain(i,:),lambdaForEDA,miuForEDA,simulationTimes);
+   EDAAve = EDAve + DEABestFitness;
+   while j < recursiveTimes,
+   		j = j+1;
+   		[tempind,tempfit] = EDA(dimensionSize,benchmarkForMaximization,definitionDomain(i,:),lambdaForEDA,miuForEDA,simulationTimes);
+   		EDAAve = EDAAve + tempfit;
+        if tempfit > EDABestFitness,
+   			EDABestFitness = tempfit;
+   			EDABestIndividual = tempind;
+   		end
+   end
+   EDATime = toc / recursiveTimes;
+   EDAAve = EDAAve / recursiveTimes;
+   EDABestFitness = -EDABestFitness;
+   %show the results
+   fprintf('benchmark f%d  results:\n',i);
+   		%GA
+   fprintf('\t GA\n');
+   fprintf('globa best ---|\n');
+   fprintf('\tINDIVIDUAL:');
+   disp(GABestIndividual);
+   fprintf('\tFITNESS:%d\n',GABestFitness);
+   fprintf('Average Error:%d\n', GAAve - globalOptimum(i));
+   fprintf('Average Time:%d\n',GATime);
+   		%PSO
+   fprintf('\t PSO\n');
+   fprintf('globa best ---|\n');
+   fprintf('\tINDIVIDUAL:');
+   disp(PSOBestIndividual);
+   fprintf('\tFITNESS:%d\n',PSOBestFitness);
+   fprintf('Average Error:%d\n', PSOAve - globalOptimum(i));
+   fprintf('Average Time:%d\n',PSOTime);
+   		%DE
+   fprintf('\t DE\n');
+   fprintf('globa best ---|\n');
+   fprintf('\tINDIVIDUAL:');
+   disp(DEBestIndividual);
+   fprintf('\tFITNESS:%d\n',DEBestFitness);
+   fprintf('Average Error:%d\n', DEAve - globalOptimum(i));
+   fprintf('AVerage Time:%d\n',DETime);
+   		%EDA
+   fprintf('\t EDA\n');
+   fprintf('globa best ---|\n');
+   fprintf('\tINDIVIDUAL:');
+   disp(EDABestIndividual);
+   fprintf('\tFITNESS:%d\n',EDABestFitness);
+   fprintf('Average Error:%d\n', EDAAve - globalOptimum(i));
+   fprintf('Average Time:%d\n',EDATime);
+end
+
+end
