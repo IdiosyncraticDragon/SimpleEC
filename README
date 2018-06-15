@@ -1,5 +1,6 @@
-This is a simple Evolutionary Computation Implementation
+This is a simple Implementation of Evolutionary Computation
 
-the GA.m, PSO.m, EDA.m, DE.m is the algorithm and the RunExperiment1.m is the work file, run it it will invoke the algorithms to do the experiment.
+GA.m, PSO.m, EDA.m, DE.m contain the algorithms and the RunExperiment1.m is the main file. The RunExperiment1.m will invoke the algorithmsin sequence.
 
-And the other files are the benchmark functions and dataset, the README.txt is the introduction of the benchmarks.
+And the other files are the benchmark functions and dataset.
+README.txt introduces the benchmarks.
